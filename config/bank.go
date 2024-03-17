@@ -59,10 +59,10 @@ type Bank struct {
 	Name string
 
 	// Name of the checking account representing at this bank
-	Account string `yaml:"checkingAccountName"`
+	AccountName string `yaml:"accountName"`
 
 	// Name of the account accruing this bank's fees
-	FeeAccount string `yaml:"feeAccountName"`
+	FeeAccountName string `yaml:"feeAccountName"`
 
 	Templates map[string]string `yaml:"templates"`
 

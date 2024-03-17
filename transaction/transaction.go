@@ -323,12 +323,12 @@ func (t Transaction) GetAccountTo() string {
 }
 
 func (t Transaction) GetAccountFrom() string {
-	account := t.bank.Account
-	if account == "" {
-		account = "Unknown:AccountFrom"
+	accountName := t.bank.AccountName
+	if accountName == "" {
+		accountName = "Unknown:AccountFrom"
 	}
 
-	return account
+	return accountName
 }
 
 func (t Transaction) Match(matchers []cfg.Matcher) bool {
@@ -497,7 +497,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		t.GetAccountTo(),
 		t.FormatAmountRealInverted(&buffer),
 		t.FormatFee(),
-		t.bank.FeeAccount,
+		t.bank.FeeAccountName,
 		t.formatAmountRealWithCurrency(t.AmountAccount+t.Fee, t.GetCurrencyBySymbol(t.CurrencyAccount)),
 		t.FormatTwinTransaction(buffer),
 		t.GetAccountFrom(),
