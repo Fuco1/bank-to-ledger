@@ -1,0 +1,4 @@
+*.csv
+*.ledger
+config.yaml
+/bank-to-ledger
