@@ -24,6 +24,10 @@ type MultiAccountTo struct {
 }
 
 type Config struct {
+	Accounts Account `yaml:"accounts"`
+
+	Payees map[string]*Payee `yaml:"payees"`
+
 	ToPayeeRaw struct {
 		Pattern map[string]string `yaml:"pattern"`
 	} `yaml:"toPayeeRaw"`
@@ -79,6 +83,12 @@ func LoadConfig(fileName string) Config {
 			panic(fmt.Sprintf("Regexp-mapped raw-payee %s (from %s) does not exist in payee-raw to payee map ", v, k))
 		}
 	}
+
+	for name, payee := range cfg.Payees {
+		payee.Name = name
+	}
+
+	MapPayees(cfg.Accounts, "", cfg.Payees)
 
 	return cfg
 }

@@ -5,11 +5,12 @@ import (
 	t "bank-to-ledger/transaction"
 	"encoding/csv"
 	"fmt"
+	"github.com/jessevdk/go-flags"
 	"log"
 	"os"
 	s "strings"
 
-	"github.com/jessevdk/go-flags"
+	"github.com/sanity-io/litter"
 )
 
 type Options struct {
@@ -116,6 +117,27 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 }
 
 func main() {
+	// config := cfg.LoadPayees("payees.yaml")
+	// litter.Dump(config)
+
+	// payees := make(map[string]string)
+	// cfg.MapPayees(config.Accounts, "", payees)
+	// for k, v := range payees {
+	// 	fmt.Printf("%s: %s\n", k, v)
+	// }
+	////////////////////////
+
+	// config := cfg.LoadAccounts("accounts.yaml")
+	// fmt.Printf("%+v\n", config)
+
+	// payees := make(map[string]string)
+	// cfg.MapPayees(config.Accounts, "", payees)
+	// for k, v := range payees {
+	// 	fmt.Printf("%s: %s\n", k, v)
+	// }
+
+	//////////////////////////////
+
 	var options Options
 	var parser = flags.NewParser(&options, flags.Default)
 
@@ -135,6 +157,12 @@ func main() {
 
 	config := cfg.LoadConfig(options.Config)
 	config.ValidateConfig()
+
+	confStr := litter.Sdump(config.Payees)
+	fmt.Fprintf(os.Stderr, "\n\n%s", confStr)
+
+	confAccStr := litter.Sdump(config.Accounts)
+	fmt.Fprintf(os.Stderr, "\n\n%s", confAccStr)
 
 	transactions, bank := readCsv(args[0], options, config)
 	bank.ValidateBankConfig()

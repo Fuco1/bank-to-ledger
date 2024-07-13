@@ -8,4 +8,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require golang.org/x/sys v0.1.0 // indirect
+require (
+	github.com/sanity-io/litter v1.5.5 // indirect
+	golang.org/x/sys v0.1.0 // indirect
+)
