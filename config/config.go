@@ -12,12 +12,6 @@ type SymbolMap struct {
 	InFront bool   `yaml:"inFront"`
 }
 
-type TransactionMeta struct {
-	Location string `yaml:"location"`
-	PayeeRaw string `yaml:"payeeRaw"`
-	Note     string `yaml:"note"`
-}
-
 type MultiAccountTo struct {
 	Matcher   map[string]string `yaml:"matcher"`
 	AccountTo string            `yaml:"accountTo"`

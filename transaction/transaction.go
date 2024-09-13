@@ -204,7 +204,45 @@ func (t Transaction) FormatAmountRealInverted(buffer *TransactionBuffer) string 
 	return t.formatAmountReal(amount)
 }
 
+func (t Transaction) matchPayee(p *cfg.Payee) *cfg.PayeePattern {
+	if p.PayeeRaw != nil {
+		for _, pattern := range p.PayeeRaw {
+			match, _ := regexp.MatchString("(?i)"+pattern.Value, t.PayeeRaw)
+			if match {
+				pattern.Type = "PayeeRaw"
+				return &pattern
+			}
+		}
+	}
+
+	if p.ReceiverAccountNumber != nil {
+		for _, pattern := range p.ReceiverAccountNumber {
+			if pattern.Value == t.ReceiverAccountNumber {
+				pattern.Type = "ReceiverAccountNumber"
+				return &pattern
+			}
+		}
+	}
+
+	if p.PaymentType != nil {
+		for _, pattern := range p.PaymentType {
+			if pattern.Value == t.PaymentType {
+				pattern.Type = "PaymentType"
+				return &pattern
+			}
+		}
+	}
+
+	return nil
+}
+
 func (t Transaction) GetPayee() (string, bool) {
+	for _, pv := range t.config.Payees {
+		if pattern := t.matchPayee(pv); pattern != nil {
+			return pv.Name, true
+		}
+	}
+
 	payee, exists := t.config.ToPayee.PaymentType[t.PaymentType]
 
 	if !exists {

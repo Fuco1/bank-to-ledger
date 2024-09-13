@@ -2,17 +2,10 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
 type Account map[string]interface{}
-
-type AccountsConfig struct {
-	Accounts Account `yaml:"accounts"`
-}
 
 func convertToStrings(input []interface{}) ([]string, error) {
 	var result []string
@@ -48,21 +41,4 @@ func MapPayees(account Account, path string, payees map[string]*Payee) {
 			}
 		}
 	}
-}
-
-func LoadAccounts(fileName string) AccountsConfig {
-	var cfg AccountsConfig
-
-	yamlFile, err := ioutil.ReadFile(fileName)
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = yaml.Unmarshal(yamlFile, &cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	return cfg
 }

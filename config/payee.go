@@ -2,8 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
-
 	"gopkg.in/yaml.v3"
 )
 
@@ -11,27 +9,71 @@ import (
 // string or a map where the key is the "pattern" and value is a map
 // with meta keys
 
+type TransactionMeta struct {
+	Location string `yaml:"location"`
+	PayeeRaw string `yaml:"payeeRaw"`
+	Note     string `yaml:"note"`
+}
+
 type PayeePattern struct {
 	Value string
-	Meta  map[string]string
+	Type  string
+	Meta  *TransactionMeta
 }
+
+type PayeePatterns []PayeePattern
 
 type Payee struct {
 	Name string
 
 	Account string
 
-	PayeeRaw []PayeePattern `yaml:"payeeRaw"`
+	// go text/template template string used to generate the payee text
+	Template string `yaml:"template"`
 
-	ReceiverAccountNumber []PayeePattern `yaml:"receiverAccountNumber"`
+	PayeeRaw PayeePatterns `yaml:"payeeRaw"`
 
-	PaymentType []PayeePattern `yaml:"paymentType"`
+	ReceiverAccountNumber PayeePatterns `yaml:"receiverAccountNumber"`
 
-	Meta map[string]string `yaml:"meta"`
+	PaymentType PayeePatterns `yaml:"paymentType"`
+
+	Meta *TransactionMeta `yaml:"meta"`
 }
 
 type PayeeConfig struct {
 	Payees map[string]*Payee `yaml:"payees"`
+}
+
+// Parse the payee object.  As a shortcut, it can have a single string
+// value which is interpreted as PayeeRaw pattern
+func (p *Payee) UnmarshalYAML(value *yaml.Node) error {
+	var pattern string
+	if err := value.Decode(&pattern); err == nil {
+		p.PayeeRaw = []PayeePattern{{Value: pattern}}
+		return nil
+	}
+
+	type payee Payee
+	if err := value.Decode((*payee)(p)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pp *PayeePatterns) UnmarshalYAML(value *yaml.Node) error {
+	var pattern string
+	if err := value.Decode(&pattern); err == nil {
+		*pp = []PayeePattern{{Value: pattern}}
+		return nil
+	}
+
+	type payeePatterns PayeePatterns
+	if err := value.Decode((*payeePatterns)(pp)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (pp *PayeePattern) UnmarshalYAML(value *yaml.Node) error {
@@ -41,7 +83,7 @@ func (pp *PayeePattern) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
-	rawPattern := make(map[string]map[string]string)
+	rawPattern := make(map[string]*TransactionMeta)
 	if err := value.Decode(&rawPattern); err == nil {
 		for key, value := range rawPattern {
 			pp.Value = key
@@ -50,28 +92,5 @@ func (pp *PayeePattern) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 
-	return fmt.Errorf("Error parsing PayeePattern %s", value)
-}
-
-func LoadPayees(fileName string) []Payee {
-	var cfg PayeeConfig
-
-	yamlFile, err := ioutil.ReadFile(fileName)
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = yaml.Unmarshal(yamlFile, &cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	var payees []Payee
-	for name, payee := range cfg.Payees {
-		payee.Name = name
-		payees = append(payees, *payee)
-	}
-
-	return payees
+	return fmt.Errorf("Error parsing PayeePattern")
 }
