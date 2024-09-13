@@ -8,6 +8,8 @@ import (
 	"github.com/jessevdk/go-flags"
 	"log"
 	"os"
+	"path/filepath"
+	"regexp"
 	s "strings"
 
 	"github.com/sanity-io/litter"
@@ -82,6 +84,19 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 			log.Fatalf("Bank with name %s not found in config", options.BankName)
 		}
 	} else {
+		// try to get bank config by filename match
+		baseFile := filepath.Base(fileName)
+		for _, b := range config.Banks {
+			if b.FileNamePattern != "" {
+				match, _ := regexp.MatchString(b.FileNamePattern, baseFile)
+				if match {
+					bank = b
+					log.Printf("Bank determined by file name pattern `%s`", b.FileNamePattern)
+					break
+				}
+			}
+		}
+
 		if !hasHeader {
 			log.Fatal("CVS file does not contain header row and bank name was not provided.  Cannot determine bank configuration.")
 		}

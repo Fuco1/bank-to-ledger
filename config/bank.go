@@ -72,6 +72,8 @@ type Bank struct {
 	// Columns used to auto-identify the bank from a csv file
 	IdentifyingColumns []string `yaml:"identifyingColumns"`
 
+	FileNamePattern string `yaml:"fileNamePattern"`
+
 	ColumnNames ColumnNames `yaml:"columnNames"`
 
 	ColumnIndices ColumnIndices `yaml:"columnIndices"`
