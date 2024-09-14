@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -76,6 +77,10 @@ func LoadConfig(fileName string) Config {
 		payee.Name = name
 	}
 
+	if len(cfg.Payees) == 0 {
+		cfg.Payees = make(map[string]*Payee)
+	}
+
 	for name, bank := range cfg.Banks {
 		bank.Name = name
 
@@ -83,6 +88,9 @@ func LoadConfig(fileName string) Config {
 			p, exists := cfg.Payees[bank.PayeeName]
 			if exists {
 				bank.Payee = p
+			}
+			if p.Account == "" {
+				p.Account = bank.AccountName
 			}
 		}
 	}
@@ -93,5 +101,11 @@ func LoadConfig(fileName string) Config {
 }
 
 func (c Config) ValidateConfig() bool {
+	for _, payee := range c.Payees {
+		if payee.Account == "" {
+			fmt.Fprintf(os.Stderr, "Payee `%s' has no assigned account\n", payee.Name)
+		}
+	}
+
 	return true
 }
