@@ -38,7 +38,10 @@ type Transaction struct {
 	Meta cfg.TransactionMeta
 
 	config cfg.Config
-	bank   cfg.Bank
+	bank   *cfg.Bank
+
+	// cached payee object
+	payee *cfg.Payee
 }
 
 type TransactionBuffer struct {
@@ -58,7 +61,7 @@ func normalizeAmount(amount string) string {
 	return strings.ReplaceAll(amountNoComma, " ", "")
 }
 
-func FromCsvRecord(record []string, config cfg.Config, bank cfg.Bank) Transaction {
+func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transaction {
 	ci := bank.ColumnIndices
 
 	amountAccountNormalized := normalizeAmount(record[ci.AmountAccount])
@@ -236,78 +239,43 @@ func (t Transaction) matchPayee(p *cfg.Payee) *cfg.PayeePattern {
 	return nil
 }
 
-func (t Transaction) GetPayee() (string, bool) {
+func (t Transaction) GetPayee() (*cfg.Payee, bool) {
+	if t.payee != nil {
+		return t.payee, true
+	}
+
 	for _, pv := range t.config.Payees {
 		if pattern := t.matchPayee(pv); pattern != nil {
-			return pv.Name, true
+			t.payee = pv
+			return pv, true
 		}
 	}
 
-	payee, exists := t.config.ToPayee.PaymentType[t.PaymentType]
-
-	if !exists {
-		payee, exists = t.config.ToPayee.ReceiverAccountNumber[t.ReceiverAccountNumber]
-	}
-
-	if !exists {
-		payee, exists = t.config.ToPayee.PayeeRaw[t.PayeeRaw]
-	}
-
-	if !exists {
-		for pattern, payeeRaw := range t.config.ToPayeeRaw.Pattern {
-			match, _ := regexp.MatchString("(?i)"+pattern, t.PayeeRaw)
-			if match {
-				payee, exists = t.config.ToPayee.PayeeRaw[payeeRaw]
-
-				if !exists {
-					_, exists = t.config.ToAccountTo.Payee[payeeRaw]
-					if exists {
-						payee = payeeRaw
-					}
-				}
-				break
-			}
-		}
-	}
-
-	// check if this raw payee is mapped to an account.  If it is, we
-	// assume that the raw payee and final payee are the same and no
-	// processing is necessary.
-	if !exists {
-		_, exists = t.config.ToAccountTo.Payee[t.PayeeRaw]
-		if exists {
-			payee = t.PayeeRaw
-		}
-	}
-
-	if !exists {
-		payee = "Unknown payee ;" + t.PayeeRaw
-	}
-
-	return payee, exists
+	return cfg.GetUnknownPayee(t.PayeeRaw), false
 }
 
 func (t Transaction) GetNote() string {
 	payee, _ := t.GetPayee()
 	note := []string{"(^.^)"}
+	payeeName := payee.Name
 
-	if payee == "RegioJet" {
+	if payeeName == "RegioJet" {
 		note = append(note, "check if credit")
 	}
 
-	if slices.Contains(t.config.PayeeIsTravel, payee) {
+	if slices.Contains(t.config.PayeeIsTravel, payeeName) {
 		note = append(note, "add to/from/location")
 	}
 
-	if slices.Contains([]string{"Alza", "Tesco", "Tiger"}, payee) {
+	if slices.Contains([]string{"Alza", "Tesco", "Tiger"}, payeeName) {
 		note = append(note, "what did you get from there?")
 	}
 
-	if payee == "Unknown hotel" {
+	if payeeName == "Unknown hotel" {
 		note = append(note, "add which hotel it is")
 	}
 
-	if payee == "Small chinese shop" {
+	if payeeName == "Small chinese shop" {
 		note = append(
 			note,
 			"this is prob the small shop next to your place but check",
@@ -333,25 +301,11 @@ func (t Transaction) resolveTemplate(template string) string {
 
 func (t Transaction) GetAccountTo() string {
 	payee, _ := t.GetPayee()
-	acc, exists := t.config.ToAccountTo.Payee[payee]
-
-	// Try the multi-matchers here
-	if !exists {
-		for _, mmatcher := range t.config.ToAccountTo.Multi {
-			matchers := make([]cfg.Matcher, 1)
-			for k, v := range mmatcher.Matcher {
-				matchers = append(matchers, cfg.Matcher{
-					Column: k,
-					Value:  v,
-				})
-			}
-			if t.Match(matchers) {
-				acc = mmatcher.AccountTo
-				exists = true
-				break
-			}
-		}
+	if payee.Account != "" {
+		return payee.Account
 	}
+
+	acc, exists := t.config.ToAccountTo.Payee[payee.Name]
 
 	if !exists {
 		return "Unknown:Account"
@@ -370,26 +324,39 @@ func (t Transaction) GetAccountFrom() string {
 }
 
 func (t Transaction) Match(matchers []cfg.Matcher) bool {
-	isMatch := true
-
 	for _, matcher := range matchers {
-		switch matcher.Column {
-		case "PaymentType":
-			isMatch = isMatch && t.PaymentType == matcher.Value
-		case "ReceiverAccountNumber":
-			isMatch = isMatch && t.ReceiverAccountNumber == matcher.Value
-		case "PayeeRaw":
-			isMatch = isMatch && t.PayeeRaw == matcher.Value
-		case "NoteForMe":
-			isMatch = isMatch && t.NoteForMe == matcher.Value
-		case "NoteForReceiver":
-			isMatch = isMatch && t.NoteForReceiver == matcher.Value
-		default:
-			return false
+		isMatch := true
+
+		if matcher.PaymentType != "" {
+			isMatch = isMatch && t.PaymentType == matcher.PaymentType
+		}
+		if matcher.ReceiverAccountNumber != "" {
+			isMatch = isMatch && t.ReceiverAccountNumber == matcher.ReceiverAccountNumber
+		}
+		if matcher.PayeeRaw != "" {
+			isMatch = isMatch && t.PayeeRaw == matcher.PayeeRaw
+		}
+		if matcher.Payee != "" {
+			payee, exists := t.GetPayee()
+			if exists {
+				isMatch = isMatch && payee.Name == matcher.Payee
+			} else {
+				isMatch = false
+			}
+		}
+		if matcher.NoteForMe != "" {
+			isMatch = isMatch && t.NoteForMe == matcher.NoteForMe
+		}
+		if matcher.NoteForReceiver != "" {
+			isMatch = isMatch && t.NoteForReceiver == matcher.NoteForReceiver
+		}
+
+		if isMatch {
+			return true
 		}
 	}
 
-	return isMatch
+	return false
 }
 
 func (t Transaction) IsTwinTransaction() *cfg.TwinTransactions {
@@ -420,6 +387,23 @@ func (t Transaction) IsIgnored() bool {
 	}
 
 	return false
+}
+
+func (t Transaction) IsTransactionToOwnAccount() *cfg.Bank {
+	banks := t.config.Banks
+	payee, exists := t.GetPayee()
+
+	if !exists {
+		return nil
+	}
+
+	for _, bank := range banks {
+		if bank.Payee != nil && bank.Payee.Name == payee.Name {
+			return bank
+		}
+	}
+
+	return nil
 }
 
 func (tb *TransactionBuffer) Append(trans Transaction) {
@@ -503,7 +487,7 @@ type TemplateContext struct {
 
 func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	payee, _ := t.GetPayee()
-	meta := t.GetMeta(payee)
+	meta := t.GetMeta(payee.Name)
 
 	metaLines := make([]string, 1)
 	for k, v := range meta {
@@ -529,7 +513,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	context := TemplateContext{
 		t,
 		t.FormatDate(),
-		payee,
+		payee.Name,
 		t.GetNote(),
 		strings.Join(metaLines, ""),
 		t.GetAccountTo(),

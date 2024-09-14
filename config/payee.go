@@ -94,3 +94,10 @@ func (pp *PayeePattern) UnmarshalYAML(value *yaml.Node) error {
 
 	return fmt.Errorf("Error parsing PayeePattern")
 }
+
+func GetUnknownPayee(payeeRaw string) *Payee {
+	return &Payee{
+		Name:    "Unknown payee ;" + payeeRaw,
+		Account: "Unknown:Account",
+	}
+}

@@ -12,11 +12,6 @@ type SymbolMap struct {
 	InFront bool   `yaml:"inFront"`
 }
 
-type MultiAccountTo struct {
-	Matcher   map[string]string `yaml:"matcher"`
-	AccountTo string            `yaml:"accountTo"`
-}
-
 type Config struct {
 	Accounts Account `yaml:"accounts"`
 
@@ -34,7 +29,6 @@ type Config struct {
 
 	ToAccountTo struct {
 		Payee map[string]string `yaml:"payee"`
-		Multi []MultiAccountTo  `yaml:"multi"`
 	} `yaml:"toAccountTo"`
 
 	ToMeta struct {
@@ -48,7 +42,7 @@ type Config struct {
 		SymbolMap map[string]SymbolMap `yaml:"symbolMap"`
 	} `yaml:"currencies"`
 
-	Banks map[string]Bank `yaml:"banks"`
+	Banks map[string]*Bank `yaml:"banks"`
 }
 
 func LoadConfig(fileName string) Config {
@@ -80,6 +74,17 @@ func LoadConfig(fileName string) Config {
 
 	for name, payee := range cfg.Payees {
 		payee.Name = name
+	}
+
+	for name, bank := range cfg.Banks {
+		bank.Name = name
+
+		if bank.PayeeName != "" {
+			p, exists := cfg.Payees[bank.PayeeName]
+			if exists {
+				bank.Payee = p
+			}
+		}
 	}
 
 	MapPayees(cfg.Accounts, "", cfg.Payees)

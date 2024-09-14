@@ -33,8 +33,18 @@ type ColumnNames struct {
 }
 
 type Matcher struct {
-	Column string `yaml:"column"`
-	Value  string `yaml:"value"`
+	DateRaw               string `yaml:"dateRaw"`
+	Payee                 string `yaml:"payee"`
+	PayeeRaw              string `yaml:"payeeRaw"`
+	CurrencyRaw           string `yaml:"currencyRaw"`
+	CurrencyAccount       string `yaml:"currencyAccount"`
+	PaymentType           string `yaml:"paymentType"`
+	AmountReal            string `yaml:"amountReal"`
+	AmountAccount         string `yaml:"amountAccount"`
+	Fee                   string `yaml:"fee"`
+	ReceiverAccountNumber string `yaml:"receiverAccountNumber"`
+	NoteForMe             string `yaml:"noteForMe"`
+	NoteForReceiver       string `yaml:"noteForReceiver"`
 }
 
 type TwinTransactions struct {
@@ -55,8 +65,20 @@ type IgnoredTransactions struct {
 }
 
 type Bank struct {
-	// Name of the bank
+	// Name of the bank (config key)
 	Name string
+
+	// Display name of the bank
+	DisplayName string `yaml:"displayName"`
+
+	// Payee name of this bank's payee.  If transaction matches this
+	// payee, we know the transaction is between user's own accounts
+	// and we only record one side (because presumably it would appear
+	// in both exports).
+	PayeeName string `yaml:"payee"`
+
+	// Resolved full Payee object, based on the PayeeName
+	Payee *Payee `yaml:"-"`
 
 	// Name of the checking account representing at this bank
 	AccountName string `yaml:"accountName"`
@@ -142,7 +164,7 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 }
 
 // check if leading columns in order correspond to identifying columns
-func GetBankConfig(header []string, banks map[string]Bank) (Bank, bool) {
+func GetBankConfig(header []string, banks map[string]*Bank) (*Bank, bool) {
 	for name, bank := range banks {
 		if len(bank.IdentifyingColumns) > len(header) {
 			continue
@@ -164,7 +186,7 @@ func GetBankConfig(header []string, banks map[string]Bank) (Bank, bool) {
 		}
 	}
 
-	return Bank{}, false
+	return &Bank{}, false
 }
 
 func (b Bank) ValidateBankConfig() bool {
