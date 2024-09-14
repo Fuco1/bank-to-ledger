@@ -1,8 +1,11 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"gopkg.in/yaml.v3"
+
+	"text/template"
 )
 
 // each of pattern, receiver, payment type is a list of either a
@@ -100,4 +103,54 @@ func GetUnknownPayee(payeeRaw string) *Payee {
 		Name:    "Unknown payee ;" + payeeRaw,
 		Account: "Unknown:Account",
 	}
+}
+
+type PayeeTemplateContext struct {
+	Bank *Bank
+}
+
+type templateContextBank struct {
+	DisplayName string
+}
+
+type templateContextPayee struct {
+	Name string
+}
+
+type templateContext struct {
+	Bank templateContextBank
+
+	Payee templateContextPayee
+}
+
+func (p *Payee) FormatPayee(context PayeeTemplateContext) string {
+	if p.Template == "" {
+		return p.Name
+	}
+
+	tmpl, err := template.New("payee").Parse(p.Template)
+	var out bytes.Buffer
+
+	bankDisplayName := context.Bank.DisplayName
+	if bankDisplayName == "" {
+		bankDisplayName = context.Bank.PayeeName
+	}
+	if bankDisplayName == "" {
+		bankDisplayName = context.Bank.Name
+	}
+
+	err = tmpl.Execute(&out, templateContext{
+		Bank: templateContextBank{
+			DisplayName: bankDisplayName,
+		},
+		Payee: templateContextPayee{
+			Name: p.Name,
+		},
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return out.String()
 }

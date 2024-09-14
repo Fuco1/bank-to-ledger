@@ -513,7 +513,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	context := TemplateContext{
 		t,
 		t.FormatDate(),
-		payee.Name,
+		payee.FormatPayee(cfg.PayeeTemplateContext{Bank: t.bank}),
 		t.GetNote(),
 		strings.Join(metaLines, ""),
 		t.GetAccountTo(),
