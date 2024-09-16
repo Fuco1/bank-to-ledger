@@ -38,7 +38,6 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 
 	records, err := reader.ReadAll()
 	if err != nil {
-		log.Printf("Parsing error `%s`, retrying to parse with ; delimiter", err)
 		// try to re-parse with ; delimiter
 		file.Seek(0, 0)
 
@@ -72,8 +71,6 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 		}
 	}
 
-	log.Println(records[0])
-
 	var bank *cfg.Bank
 	var exists bool
 
@@ -90,7 +87,7 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 				match, _ := regexp.MatchString(b.FileNamePattern, baseFile)
 				if match {
 					bank = b
-					log.Printf("Bank determined by file name pattern `%s`", b.FileNamePattern)
+					log.Printf("Bank config `%s` determined by file name pattern `%s`", b.Name, b.FileNamePattern)
 					break
 				}
 			}
@@ -106,9 +103,9 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 			if !exists {
 				log.Fatalf("No configured bank matches the cvs file %s", fileName)
 			}
+			log.Printf("Using automatically detected bank %s", bank.Name)
 		}
 
-		log.Printf("Using automatically detected bank %s", bank.Name)
 	}
 
 	if (bank.ColumnIndices == cfg.ColumnIndices{}) {
