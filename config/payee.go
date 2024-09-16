@@ -31,6 +31,12 @@ type Payee struct {
 
 	Account string
 
+	// Account associated with this payee.  Normally, the accounts are
+	// resolved through the "accounts" hierarchy from the config.
+	// However, here we can specify a template string for dynamically
+	// generated accounts.
+	AccountTemplate string `yaml:"accountTemplate"`
+
 	// go text/template template string used to generate the payee text
 	Template string `yaml:"template"`
 
@@ -145,6 +151,38 @@ func (p *Payee) FormatPayee(context PayeeTemplateContext) string {
 		},
 		Payee: templateContextPayee{
 			Name: p.Name,
+		},
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return out.String()
+}
+
+type accountTemplateContextBank struct {
+	Templates map[string]string
+}
+
+type AccountTemplateContext struct {
+	Bank accountTemplateContextBank
+}
+
+func (p *Payee) FormatAccount(templates map[string]string) string {
+	if p.AccountTemplate == "" {
+		if p.Account == "" {
+			panic("No account assigned to payee")
+		}
+		return p.Account
+	}
+
+	tmpl, err := template.New("account").Parse(p.AccountTemplate)
+	var out bytes.Buffer
+
+	err = tmpl.Execute(&out, AccountTemplateContext{
+		Bank: accountTemplateContextBank{
+			Templates: templates,
 		},
 	})
 

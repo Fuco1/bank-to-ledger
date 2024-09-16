@@ -239,7 +239,7 @@ func (t Transaction) matchPayee(p *cfg.Payee) *cfg.PayeePattern {
 	return nil
 }
 
-func (t Transaction) GetPayee() (*cfg.Payee, bool) {
+func (t *Transaction) GetPayee() (*cfg.Payee, bool) {
 	if t.payee != nil {
 		return t.payee, true
 	}
@@ -301,17 +301,7 @@ func (t Transaction) resolveTemplate(template string) string {
 
 func (t Transaction) GetAccountTo() string {
 	payee, _ := t.GetPayee()
-	if payee.Account != "" {
-		return payee.Account
-	}
-
-	acc, exists := t.config.ToAccountTo.Payee[payee.Name]
-
-	if !exists {
-		return "Unknown:Account"
-	}
-
-	return t.resolveTemplate(acc)
+	return payee.FormatAccount(t.bank.Templates)
 }
 
 func (t Transaction) GetAccountFrom() string {
