@@ -14,11 +14,6 @@ import (
 	"text/template"
 )
 
-type FormattableTransaction interface {
-	FormatTrans(buffer TransactionBuffer) string
-	IsTwinTransaction() string
-}
-
 type Transaction struct {
 	DateRaw         string
 	PayeeRaw        string
