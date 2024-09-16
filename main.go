@@ -101,9 +101,11 @@ func readCsv(fileName string, options Options, config cfg.Config) ([]t.Transacti
 		}
 
 		// determine bank automatically
-		bank, exists = cfg.GetBankConfig(records[0], config.Banks)
-		if !exists {
-			log.Fatalf("No configured bank matches the cvs file %s", fileName)
+		if bank == nil {
+			bank, exists = cfg.GetBankConfig(records[0], config.Banks)
+			if !exists {
+				log.Fatalf("No configured bank matches the cvs file %s", fileName)
+			}
 		}
 
 		log.Printf("Using automatically detected bank %s", bank.Name)
