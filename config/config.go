@@ -102,7 +102,7 @@ func LoadConfig(fileName string) Config {
 
 func (c Config) ValidateConfig() bool {
 	for _, payee := range c.Payees {
-		if payee.Account == "" {
+		if payee.Account == "" && payee.AccountTemplate == "" {
 			fmt.Fprintf(os.Stderr, "Payee `%s' has no assigned account\n", payee.Name)
 		}
 	}
