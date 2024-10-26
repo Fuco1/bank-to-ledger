@@ -46,6 +46,8 @@ type Payee struct {
 
 	PaymentType PayeePatterns `yaml:"paymentType"`
 
+	NoteForMe PayeePatterns `yaml:"noteForMe"`
+
 	Meta *TransactionMeta `yaml:"meta"`
 }
 

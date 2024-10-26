@@ -231,6 +231,16 @@ func (t Transaction) matchPayee(p *cfg.Payee) *cfg.PayeePattern {
 		}
 	}
 
+	if p.NoteForMe != nil {
+		for _, pattern := range p.NoteForMe {
+			match, _ := regexp.MatchString("(?i)"+pattern.Value, t.NoteForMe)
+			if match {
+				pattern.Type = "NoteForMe"
+				return &pattern
+			}
+		}
+	}
+
 	return nil
 }
 
