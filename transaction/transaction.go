@@ -188,15 +188,20 @@ func (t Transaction) FormatFee() string {
 	}
 }
 
+func (buffer TransactionBuffer) getAmountSum() float64 {
+	var amountBuffer = 0.0
+	for _, tr := range buffer.Transactions {
+		amountBuffer += tr.AmountReal
+	}
+
+	return amountBuffer
+}
+
 func (t Transaction) FormatAmountRealInverted(buffer *TransactionBuffer) string {
 	amount := -t.AmountReal
 
 	if buffer != nil && buffer.Twin.Type == "sum" {
-		var amountBuffer = 0.0
-		for _, tr := range buffer.Transactions {
-			amountBuffer -= tr.AmountReal
-		}
-		amount = amount + amountBuffer
+		amount = amount - buffer.getAmountSum()
 	}
 
 	return t.formatAmountReal(amount)
@@ -506,18 +511,21 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 
 	var out bytes.Buffer
 	context := TemplateContext{
-		t,
-		t.FormatDate(),
-		payee.FormatPayee(cfg.PayeeTemplateContext{Bank: t.bank}),
-		t.GetNote(),
-		strings.Join(metaLines, ""),
-		t.GetAccountTo(),
-		t.FormatAmountRealInverted(&buffer),
-		t.FormatFee(),
-		t.bank.FeeAccountName,
-		t.formatAmountRealWithCurrency(t.AmountAccount+t.Fee, t.GetCurrencyBySymbol(t.CurrencyAccount)),
-		t.FormatTwinTransaction(buffer),
-		t.GetAccountFrom(),
+		Transaction:     t,
+		Date:            t.FormatDate(),
+		Payee:           payee.FormatPayee(cfg.PayeeTemplateContext{Bank: t.bank}),
+		Note:            t.GetNote(),
+		Meta:            strings.Join(metaLines, ""),
+		AccountTo:       t.GetAccountTo(),
+		AccountToAmount: t.FormatAmountRealInverted(&buffer),
+		FeeAmount:       t.FormatFee(),
+		AccountFee:      t.bank.FeeAccountName,
+		AmountTotal: t.formatAmountRealWithCurrency(
+			t.AmountAccount+t.Fee+buffer.getAmountSum(),
+			t.GetCurrencyBySymbol(t.CurrencyAccount),
+		),
+		TwinTransaction: t.FormatTwinTransaction(buffer),
+		AccountFrom:     t.GetAccountFrom(),
 	}
 
 	err = tmpl.Execute(&out, context)
