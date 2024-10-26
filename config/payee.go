@@ -64,6 +64,16 @@ func (p *Payee) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
+	var patternArray []string
+	if err := value.Decode(&patternArray); err == nil {
+		patterns := make([]PayeePattern, len(patternArray))
+		for i := range patternArray {
+			patterns[i] = PayeePattern{Value: patternArray[i]}
+		}
+		p.PayeeRaw = patterns
+		return nil
+	}
+
 	type payee Payee
 	if err := value.Decode((*payee)(p)); err != nil {
 		return err

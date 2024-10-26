@@ -46,6 +46,49 @@ payees:
 	}
 }
 
+func TestUnmarshalPayee_implicit_payeeRaw_array(t *testing.T) {
+	yamlData := `
+payees:
+  TIGER:
+    - '^tiger.*?'
+    - 'tig'
+`
+
+	var config Config
+	err := yaml.Unmarshal([]byte(yamlData), &config)
+	if err != nil {
+		t.Fatalf("Error unmarshalling YAML: %v", err)
+	}
+
+	var expected Config = Config{
+		Payees: map[string]*Payee{
+			"TIGER": {
+				Name:    "",
+				Account: "",
+				PayeeRaw: []PayeePattern{
+					{
+						Value: "^tiger.*?",
+						Type:  "",
+						Meta:  nil,
+					},
+					{
+						Value: "tig",
+						Type:  "",
+						Meta:  nil,
+					},
+				},
+				ReceiverAccountNumber: nil,
+				PaymentType:           nil,
+				Meta:                  nil,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(config.Payees, expected.Payees) {
+		t.Errorf("Unmarshalled config does not match expected config. Got %+v, expected %+v", config.Payees, expected.Payees)
+	}
+}
+
 func TestUnmarshalPayee_payeeRaw_string(t *testing.T) {
 	yamlData := `
 payees:
