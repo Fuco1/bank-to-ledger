@@ -47,7 +47,7 @@ type Matcher struct {
 	NoteForReceiver       string `yaml:"noteForReceiver"`
 }
 
-type TwinTransactions struct {
+type TwinTransaction struct {
 	// type can be
 	// - `sum` for adding the amount to previous transaction's amount
 	//   (produce 2 line transaction only)
@@ -57,7 +57,13 @@ type TwinTransactions struct {
 
 	Inverted bool `yaml:"inverted"`
 
+	Anchor []Matcher `yaml:"anchor"`
+
 	Matchers []Matcher `yaml:"matchers"`
+
+	UseAnchor bool `yaml:"useAnchor"`
+
+	Limit int `yaml:"limit"`
 }
 
 type IgnoredTransactions struct {
@@ -100,7 +106,7 @@ type Bank struct {
 
 	ColumnIndices ColumnIndices `yaml:"columnIndices"`
 
-	TwinTransactions []TwinTransactions `yaml:"twinTransactions"`
+	TwinTransactions []TwinTransaction `yaml:"twinTransactions"`
 
 	IgnoredTransactions []IgnoredTransactions `yaml:"ignoredTransactions"`
 }

@@ -39,13 +39,6 @@ type Transaction struct {
 	payee *cfg.Payee
 }
 
-type TransactionBuffer struct {
-	Transactions []Transaction
-
-	// merge or sum, see Config TwinTransactions
-	Twin cfg.TwinTransactions
-}
-
 type CurrencyInfo struct {
 	Sign      string
 	IsInFront bool
@@ -156,6 +149,7 @@ func formatAmount(amount float64, ci CurrencyInfo) string {
 	}
 }
 
+// TODO: make the Kc here configurable
 func formatExchangeRate(exchangeRate float64, ci CurrencyInfo) string {
 	if ci.Sign != "Kc" {
 		return fmt.Sprintf(" @ %.6f Kc", exchangeRate)
@@ -188,19 +182,10 @@ func (t Transaction) FormatFee() string {
 	}
 }
 
-func (buffer TransactionBuffer) getAmountSum() float64 {
-	var amountBuffer = 0.0
-	for _, tr := range buffer.Transactions {
-		amountBuffer += tr.AmountReal
-	}
-
-	return amountBuffer
-}
-
 func (t Transaction) FormatAmountRealInverted(buffer *TransactionBuffer) string {
 	amount := -t.AmountReal
 
-	if buffer != nil && buffer.Twin.Type == "sum" {
+	if buffer != nil && buffer.Twin != nil && buffer.Twin.Type == "sum" {
 		amount = amount - buffer.getAmountSum()
 	}
 
@@ -359,14 +344,11 @@ func (t Transaction) Match(matchers []cfg.Matcher) bool {
 	return false
 }
 
-func (t Transaction) IsTwinTransaction() *cfg.TwinTransactions {
+func (t Transaction) IsTwinTransactionAnchor() *cfg.TwinTransaction {
 	ttConfig := t.bank.TwinTransactions
-	for _, tt := range ttConfig {
-		if len(tt.Matchers) == 0 {
-			continue
-		}
 
-		if t.Match(tt.Matchers) {
+	for _, tt := range ttConfig {
+		if t.Match(tt.Anchor) {
 			return &tt
 		}
 	}
@@ -406,12 +388,8 @@ func (t Transaction) IsTransactionToOwnAccount() *cfg.Bank {
 	return nil
 }
 
-func (tb *TransactionBuffer) Append(trans Transaction) {
-	tb.Transactions = append(tb.Transactions, trans)
-}
-
 func (t Transaction) FormatTwinTransaction(buffer TransactionBuffer) string {
-	if buffer.Twin.Type == "merge" {
+	if buffer.Twin != nil && buffer.Twin.Type == "merge" {
 		lines := make([]string, 1)
 		for _, tt := range buffer.Transactions {
 			var amount string
@@ -502,7 +480,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 {{- if .TwinTransaction -}}
 {{ .TwinTransaction }}
 {{- end }}
-    {{ .AccountFrom }}{{ if or .FeeAmount (ne .Transaction.CurrencyRaw .Transaction.CurrencyAccount) }}  {{ .AmountTotal }}{{ end }}
+    {{ .AccountFrom }}{{ if or .TwinTransaction .FeeAmount (and (ne .Transaction.CurrencyRaw "") (ne .Transaction.CurrencyRaw .Transaction.CurrencyAccount)) }}  {{ .AmountTotal }}{{ end }}
 `)
 
 	if err != nil {

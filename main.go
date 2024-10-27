@@ -153,7 +153,7 @@ func main() {
 	transactions, bank := readCsv(args[0], options, config)
 	bank.ValidateBankConfig()
 
-	buffer := t.TransactionBuffer{Transactions: []t.Transaction{}}
+	buffer := t.TransactionBuffer{}
 	unknownPayees := make([]string, 1)
 
 	for _, trans := range transactions {
@@ -168,20 +168,51 @@ func main() {
 			}
 		}
 
-		if twinType := trans.IsTwinTransaction(); twinType != nil {
-			buffer.Twin = *twinType
-			buffer.Append(trans)
+		twinType := trans.IsTwinTransactionAnchor()
+		shouldPrint := true
+
+		if twinType != nil && buffer.IsEmpty() {
+			buffer = t.TransactionBuffer{
+				Transactions: []t.Transaction{trans},
+				Twin:         twinType,
+			}
 		} else {
-			if bank := trans.IsTransactionToOwnAccount(); bank != nil {
-				// only generate outgoing payments between our own accounts
-				if trans.AmountAccount > 0 {
-					continue
+			if buffer.Match(trans) {
+				buffer.Append(trans)
+			} else {
+				if bank := trans.IsTransactionToOwnAccount(); bank != nil {
+					// only generate outgoing payments between our own accounts
+					if trans.AmountAccount > 0 {
+						continue
+					}
+				}
+
+				if buffer.Length() > 0 {
+					if buffer.Length() == 1 {
+						fmt.Fprintf(os.Stderr, "Transaction at %s with payee `%s` was matched as an anchor transaction but no twin was found\n", trans.DateRaw, payee.Name)
+					}
+
+					fmt.Println(buffer.Format())
+					if twinType != nil {
+						buffer = t.TransactionBuffer{
+							Transactions: []t.Transaction{trans},
+							Twin:         twinType,
+						}
+						shouldPrint = false
+					} else {
+						buffer = t.TransactionBuffer{}
+					}
+				}
+
+				if shouldPrint {
+					fmt.Println(trans.FormatTrans(buffer))
 				}
 			}
-
-			fmt.Println(trans.FormatTrans(buffer))
-			buffer = t.TransactionBuffer{Transactions: []t.Transaction{}}
 		}
+	}
+
+	if !buffer.IsEmpty() {
+		fmt.Println(buffer.Format())
 	}
 
 	fmt.Fprintf(os.Stderr, "\n\n%s", s.Join(unknownPayees, "\n"))
