@@ -173,8 +173,8 @@ payees:
 					{
 						Value: "^tiger.*?",
 						Type:  "",
-						Meta: &TransactionMeta{
-							Location: "Prague",
+						Meta: &map[string]string{
+							"location": "Prague",
 						},
 					},
 				},

@@ -36,7 +36,8 @@ type Transaction struct {
 	bank   *cfg.Bank
 
 	// cached payee object
-	payee *cfg.Payee
+	payee   *cfg.Payee
+	pattern *cfg.PayeePattern
 }
 
 type CurrencyInfo struct {
@@ -242,6 +243,7 @@ func (t *Transaction) GetPayee() (*cfg.Payee, bool) {
 	for _, pv := range t.config.Payees {
 		if pattern := t.matchPayee(pv); pattern != nil {
 			t.payee = pv
+			t.pattern = pattern
 			return pv, true
 		}
 	}
@@ -432,6 +434,34 @@ func (t Transaction) getMetaFromStruct(
 	}
 }
 
+type TextTemplateParams struct {
+	Bank cfg.Bank
+
+	Transaction Transaction
+
+	Payee cfg.Payee
+}
+
+func (trans Transaction) FormatTextTemplate(tmp string) string {
+	tmpl, err := template.New("account").Parse(tmp)
+	var out bytes.Buffer
+
+	payee, _ := trans.GetPayee()
+
+	err = tmpl.Execute(&out, TextTemplateParams{
+		Bank:        *trans.bank,
+		Transaction: trans,
+		Payee:       *payee,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return out.String()
+
+}
+
 func (t Transaction) GetMeta(payee string) map[string]string {
 	metaOut := make(map[string]string)
 
@@ -443,6 +473,12 @@ func (t Transaction) GetMeta(payee string) map[string]string {
 	meta, exists = t.config.ToMeta.PayeeRaw[t.PayeeRaw]
 	if exists {
 		t.getMetaFromStruct(meta, metaOut)
+	}
+
+	if t.pattern != nil && t.pattern.Meta != nil {
+		for k, v := range *t.pattern.Meta {
+			metaOut[k] = t.FormatTextTemplate(v)
+		}
 	}
 
 	return metaOut

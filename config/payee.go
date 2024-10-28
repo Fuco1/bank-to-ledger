@@ -21,7 +21,7 @@ type TransactionMeta struct {
 type PayeePattern struct {
 	Value string
 	Type  string
-	Meta  *TransactionMeta
+	Meta  *map[string]string
 }
 
 type PayeePatterns []PayeePattern
@@ -104,7 +104,7 @@ func (pp *PayeePattern) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
-	rawPattern := make(map[string]*TransactionMeta)
+	rawPattern := make(map[string]*map[string]string)
 	if err := value.Decode(&rawPattern); err == nil {
 		for key, value := range rawPattern {
 			pp.Value = key
