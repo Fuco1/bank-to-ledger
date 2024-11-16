@@ -80,7 +80,7 @@ type Bank struct {
 	// Name of the bank (config key)
 	Name string
 
-	// Display name of the bank
+	// Display name of the bank.  Defaults to PayeeName and then Name.
 	DisplayName string `yaml:"displayName"`
 
 	// Payee name of this bank's payee.  If transaction matches this
@@ -203,6 +203,7 @@ func GetBankConfig(header []string, banks map[string]*Bank) (*Bank, bool) {
 		}
 
 		if identifyingColumnsMatch {
+			// TODO: should never be empty
 			if bank.Name == "" {
 				bank.Name = name
 			}
