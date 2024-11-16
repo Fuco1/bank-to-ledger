@@ -298,11 +298,6 @@ func (t Transaction) resolveTemplate(template string) string {
 	return template
 }
 
-func (t Transaction) GetAccountTo() string {
-	payee, _ := t.GetPayee()
-	return payee.FormatAccount(t.bank.Templates)
-}
-
 func (t Transaction) GetAccountFrom() string {
 	accountName := t.bank.AccountName
 	if accountName == "" {
@@ -405,7 +400,7 @@ func (t Transaction) FormatTwinTransaction(buffer TransactionBuffer) string {
 
 			lines = append(lines, fmt.Sprintf(
 				"    %s  %s",
-				tt.GetAccountTo(),
+				tt.formatAccountTo(),
 				amount,
 			))
 		}
@@ -461,7 +456,6 @@ func (trans Transaction) FormatTextTemplate(tmp string) string {
 	}
 
 	return out.String()
-
 }
 
 func (t Transaction) GetMeta(payee string) map[string]string {
@@ -535,6 +529,19 @@ func (t Transaction) formatPayee() string {
 	return tmpl.FormatTextTemplate(p.Template, t.getTemplateContext())
 }
 
+func (t Transaction) formatAccountTo() string {
+	p, _ := t.GetPayee()
+
+	if p.AccountTemplate == "" {
+		if p.Account == "" {
+			panic(fmt.Sprintf("No account assigned to payee %s", p.Name))
+		}
+		return p.Account
+	}
+
+	return tmpl.FormatTextTemplate(p.AccountTemplate, t.getTemplateContext())
+}
+
 type TemplateContext struct {
 	Transaction     Transaction
 	Date            string
@@ -581,7 +588,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		Payee:           t.formatPayee(),
 		Note:            t.GetNote(),
 		Meta:            strings.Join(metaLines, ""),
-		AccountTo:       t.GetAccountTo(),
+		AccountTo:       t.formatAccountTo(),
 		AccountToAmount: t.FormatAmountRealInverted(&buffer),
 		FeeAmount:       t.FormatFee(),
 		AccountFee:      t.bank.FeeAccountName,
