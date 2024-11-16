@@ -24,14 +24,15 @@ type PayeePattern struct {
 type PayeePatterns []PayeePattern
 
 type Payee struct {
+	// Payee name
 	Name string
 
+	// Account assigned to this payee via "accounts" configuration
 	Account string
 
-	// Account associated with this payee.  Normally, the accounts are
-	// resolved through the "accounts" hierarchy from the config.
-	// However, here we can specify a template string for dynamically
-	// generated accounts.
+	// Account template.  Normally, the accounts are resolved through
+	// the "accounts" hierarchy from the config.  However, here we can
+	// specify a template string for dynamically generated accounts.
 	AccountTemplate string `yaml:"accountTemplate"`
 
 	// go text/template template string used to generate the payee text
