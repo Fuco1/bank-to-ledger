@@ -31,10 +31,10 @@ type Transaction struct {
 	AmountAccount float64
 	Fee           float64
 
+	ReceiverAccountNumber string
+
 	NoteForMe       string
 	NoteForReceiver string
-
-	ReceiverAccountNumber string
 
 	Meta cfg.TransactionMeta
 
@@ -96,6 +96,11 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 		noteForReceiver = record[ci.NoteForReceiver]
 	}
 
+	receiverAccountNumber := ""
+	if ci.ReceiverAccountNumber != -1 {
+		receiverAccountNumber = record[ci.ReceiverAccountNumber]
+	}
+
 	commodity := ""
 	if ci.Commodity != -1 {
 		commodity = record[ci.Commodity]
@@ -129,7 +134,7 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 		NoteForMe:       noteForMe,
 		NoteForReceiver: noteForReceiver,
 
-		ReceiverAccountNumber: record[ci.ReceiverAccountNumber],
+		ReceiverAccountNumber: receiverAccountNumber,
 
 		config: config,
 		bank:   bank,
