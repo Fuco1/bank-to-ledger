@@ -2,6 +2,8 @@ package transaction
 
 import (
 	cfg "bank-to-ledger/config"
+	tmpl "bank-to-ledger/templating"
+
 	"bytes"
 	"fmt"
 	"log"
@@ -484,6 +486,55 @@ func (t Transaction) GetMeta(payee string) map[string]string {
 	return metaOut
 }
 
+func (t Transaction) getTemplateContext() tmpl.TextTemplateParams {
+	p, _ := t.GetPayee()
+
+	return tmpl.TextTemplateParams{
+		Bank: tmpl.TextTemplateBank{
+			Name:           t.bank.Name,
+			DisplayName:    t.bank.DisplayName,
+			PayeeName:      p.Name,
+			AccountName:    t.bank.AccountName,
+			FeeAccountName: t.bank.FeeAccountName,
+			Templates:      t.bank.Templates,
+		},
+		Transaction: tmpl.TextTemplateTransaction{
+			DateRaw:         t.DateRaw,
+			PayeeRaw:        t.PayeeRaw,
+			CurrencyRaw:     t.CurrencyRaw,
+			CurrencyAccount: t.CurrencyAccount,
+			PaymentType:     t.PaymentType,
+
+			Commodity:         t.Commodity,
+			CommodityPrice:    t.CommodityPrice,
+			CommodityQuantity: t.CommodityQuantity,
+
+			AmountReal:    t.AmountReal,
+			AmountAccount: t.AmountAccount,
+			Fee:           t.Fee,
+
+			ReceiverAccountNumber: t.ReceiverAccountNumber,
+
+			NoteForMe:       t.NoteForMe,
+			NoteForReceiver: t.NoteForReceiver,
+		},
+		Payee: tmpl.TextTemplatePayee{
+			Name:    p.Name,
+			Account: p.Account,
+		},
+	}
+}
+
+func (t Transaction) formatPayee() string {
+	p, _ := t.GetPayee()
+
+	if p.Template == "" {
+		return p.Name
+	}
+
+	return tmpl.FormatTextTemplate(p.Template, t.getTemplateContext())
+}
+
 type TemplateContext struct {
 	Transaction     Transaction
 	Date            string
@@ -527,7 +578,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	context := TemplateContext{
 		Transaction:     t,
 		Date:            t.FormatDate(),
-		Payee:           payee.FormatPayee(cfg.PayeeTemplateContext{Bank: t.bank}),
+		Payee:           t.formatPayee(),
 		Note:            t.GetNote(),
 		Meta:            strings.Join(metaLines, ""),
 		AccountTo:       t.GetAccountTo(),

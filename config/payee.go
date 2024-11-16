@@ -141,38 +141,6 @@ type templateContext struct {
 	Payee templateContextPayee
 }
 
-func (p *Payee) FormatPayee(context PayeeTemplateContext) string {
-	if p.Template == "" {
-		return p.Name
-	}
-
-	tmpl, err := template.New("payee").Parse(p.Template)
-	var out bytes.Buffer
-
-	bankDisplayName := context.Bank.DisplayName
-	if bankDisplayName == "" {
-		bankDisplayName = context.Bank.PayeeName
-	}
-	if bankDisplayName == "" {
-		bankDisplayName = context.Bank.Name
-	}
-
-	err = tmpl.Execute(&out, templateContext{
-		Bank: templateContextBank{
-			DisplayName: bankDisplayName,
-		},
-		Payee: templateContextPayee{
-			Name: p.Name,
-		},
-	})
-
-	if err != nil {
-		panic(err)
-	}
-
-	return out.String()
-}
-
 type accountTemplateContextBank struct {
 	Templates map[string]string
 }
