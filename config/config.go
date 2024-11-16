@@ -62,6 +62,36 @@ func getBankDisplayName(bank Bank) string {
 	return bankDisplayName
 }
 
+// Provide default values for column indices
+func (ci *ColumnIndices) UnmarshalYAML(value *yaml.Node) error {
+	type columnIndices ColumnIndices
+
+	ind := columnIndices{
+		DateRaw:               -1,
+		PayeeRaw:              -1,
+		CurrencyRaw:           -1,
+		CurrencyAccount:       -1,
+		PaymentType:           -1,
+		Commodity:             -1,
+		CommodityPrice:        -1,
+		CommodityQuantity:     -1,
+		AmountReal:            -1,
+		AmountAccount:         -1,
+		Fee:                   -1,
+		ReceiverAccountNumber: -1,
+		NoteForMe:             -1,
+		NoteForReceiver:       -1,
+	}
+
+	if err := value.Decode(&ind); err != nil {
+		return err
+	}
+
+	*ci = ColumnIndices(ind)
+
+	return nil
+}
+
 func LoadConfig(fileName string) Config {
 	var cfg Config
 

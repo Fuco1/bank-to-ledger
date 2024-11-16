@@ -10,6 +10,9 @@ type ColumnIndices struct {
 	CurrencyRaw           int `yaml:"currencyRaw"`
 	CurrencyAccount       int `yaml:"currencyAccount"`
 	PaymentType           int `yaml:"paymentType"`
+	Commodity             int `yaml:"commodity"`
+	CommodityPrice        int `yaml:"commodityPrice"`
+	CommodityQuantity     int `yaml:"commodityQuantity"`
 	AmountReal            int `yaml:"amountReal"`
 	AmountAccount         int `yaml:"amountAccount"`
 	Fee                   int `yaml:"fee"`
@@ -24,6 +27,9 @@ type ColumnNames struct {
 	CurrencyRaw           string `yaml:"currencyRaw"`
 	CurrencyAccount       string `yaml:"currencyAccount"`
 	PaymentType           string `yaml:"paymentType"`
+	Commodity             string `yaml:"commodity"`
+	CommodityPrice        string `yaml:"commodityPrice"`
+	CommodityQuantity     string `yaml:"commodityQuantity"`
 	AmountReal            string `yaml:"amountReal"`
 	AmountAccount         string `yaml:"amountAccount"`
 	Fee                   string `yaml:"fee"`
@@ -122,6 +128,9 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 		CurrencyRaw:           -1,
 		CurrencyAccount:       -1,
 		PaymentType:           -1,
+		Commodity:             -1,
+		CommodityPrice:        -1,
+		CommodityQuantity:     -1,
 		AmountReal:            -1,
 		AmountAccount:         -1,
 		Fee:                   -1,
@@ -145,6 +154,15 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 		}
 		if v == b.ColumnNames.PaymentType {
 			indices.PaymentType = i
+		}
+		if v == b.ColumnNames.Commodity {
+			indices.Commodity = i
+		}
+		if v == b.ColumnNames.CommodityPrice {
+			indices.CommodityPrice = i
+		}
+		if v == b.ColumnNames.CommodityQuantity {
+			indices.CommodityQuantity = i
 		}
 		if v == b.ColumnNames.AmountReal {
 			indices.AmountReal = i

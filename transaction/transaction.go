@@ -23,6 +23,10 @@ type Transaction struct {
 	CurrencyAccount string
 	PaymentType     string
 
+	Commodity         string
+	CommodityPrice    float64
+	CommodityQuantity float64
+
 	AmountReal    float64
 	AmountAccount float64
 	Fee           float64
@@ -92,12 +96,31 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 		noteForReceiver = record[ci.NoteForReceiver]
 	}
 
+	commodity := ""
+	if ci.Commodity != -1 {
+		commodity = record[ci.Commodity]
+	}
+
+	commodityPrice := 0.0
+	if ci.CommodityPrice != -1 {
+		commodityPrice, _ = strconv.ParseFloat(normalizeAmount(record[ci.CommodityPrice]), 64)
+	}
+
+	commodityQuantity := 0.0
+	if ci.CommodityQuantity != -1 {
+		commodityQuantity, _ = strconv.ParseFloat(normalizeAmount(record[ci.CommodityQuantity]), 64)
+	}
+
 	return Transaction{
 		DateRaw:         record[ci.DateRaw],
 		PaymentType:     record[ci.PaymentType],
 		CurrencyRaw:     currencyRaw,
 		CurrencyAccount: currencyAccount,
 		PayeeRaw:        record[ci.PayeeRaw],
+
+		Commodity:         commodity,
+		CommodityPrice:    commodityPrice,
+		CommodityQuantity: commodityQuantity,
 
 		AmountAccount: AmountAccount,
 		AmountReal:    AmountReal,
