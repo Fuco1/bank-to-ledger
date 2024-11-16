@@ -46,6 +46,22 @@ type Config struct {
 	Banks map[string]*Bank `yaml:"banks"`
 }
 
+func getBankDisplayName(bank Bank) string {
+	bankDisplayName := bank.DisplayName
+	if bankDisplayName == "" {
+		bankDisplayName = bank.PayeeName
+	}
+	if bankDisplayName == "" {
+		bankDisplayName = bank.Name
+	}
+
+	if bankDisplayName == "" {
+		panic(fmt.Sprintf("Bank %s has no display name", bank.Name))
+	}
+
+	return bankDisplayName
+}
+
 func LoadConfig(fileName string) Config {
 	var cfg Config
 
@@ -83,6 +99,7 @@ func LoadConfig(fileName string) Config {
 
 	for name, bank := range cfg.Banks {
 		bank.Name = name
+		bank.DisplayName = getBankDisplayName(*bank)
 
 		if bank.PayeeName != "" {
 			p, exists := cfg.Payees[bank.PayeeName]
