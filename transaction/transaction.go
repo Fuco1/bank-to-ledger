@@ -7,13 +7,15 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
 	"text/template"
+
+	"golang.org/x/exp/slices"
 )
 
 type Transaction struct {
@@ -201,7 +203,13 @@ func (t Transaction) formatAmountReal(amount float64) string {
 }
 
 func (t Transaction) formatAmountRealWithCurrency(amount float64, ci CurrencyInfo) string {
-	return formatAmount(amount, ci) + formatExchangeRate(t.GetExchangeRate(), ci)
+	amountFormatted := formatAmount(amount, ci)
+
+	if t.CurrencyRaw != t.CurrencyAccount {
+		amountFormatted = amountFormatted + formatExchangeRate(t.GetExchangeRate(), ci)
+	}
+
+	return amountFormatted
 }
 
 func (t Transaction) FormatAmountReal() string {
@@ -577,18 +585,19 @@ func (t Transaction) formatAccountTo() string {
 }
 
 type TemplateContext struct {
-	Transaction     Transaction
-	Date            string
-	Payee           string
-	Note            string
-	Meta            string
-	AccountTo       string
-	AccountToAmount string
-	FeeAmount       string
-	AccountFee      string
-	AmountTotal     string
-	TwinTransaction string
-	AccountFrom     string
+	Transaction             Transaction
+	Date                    string
+	Payee                   string
+	Note                    string
+	Meta                    string
+	AccountTo               string
+	AccountToAmount         string
+	CommodityPriceFormatted string
+	FeeAmount               string
+	AccountFee              string
+	AmountTotal             string
+	TwinTransaction         string
+	AccountFrom             string
 }
 
 func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
@@ -601,7 +610,10 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	}
 
 	tmpl, err := template.New("transaction").Parse(`{{ .Date }} * {{ .Payee }}{{ .Note }}
-{{ .Meta }}    {{ .AccountTo }}  {{ .AccountToAmount }}
+{{ .Meta }}    {{ .AccountTo }}
+{{- if .Transaction.CommodityQuantity }}  {{ .Transaction.CommodityQuantity }} {{ .Transaction.Commodity }} @ {{ .CommodityPriceFormatted }}
+{{- else }}      {{ .AccountToAmount }}
+{{- end }}
 {{- if .FeeAmount }}
     {{ .AccountFee }}  {{ .FeeAmount }}
 {{- end }}
@@ -617,15 +629,16 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 
 	var out bytes.Buffer
 	context := TemplateContext{
-		Transaction:     t,
-		Date:            t.FormatDate(),
-		Payee:           t.formatPayee(),
-		Note:            t.GetNote(),
-		Meta:            strings.Join(metaLines, ""),
-		AccountTo:       t.formatAccountTo(),
-		AccountToAmount: t.FormatAmountRealInverted(&buffer),
-		FeeAmount:       t.FormatFee(),
-		AccountFee:      t.bank.FeeAccountName,
+		Transaction:             t,
+		Date:                    t.FormatDate(),
+		Payee:                   t.formatPayee(),
+		Note:                    t.GetNote(),
+		Meta:                    strings.Join(metaLines, ""),
+		AccountTo:               t.formatAccountTo(),
+		AccountToAmount:         t.FormatAmountRealInverted(&buffer),
+		CommodityPriceFormatted: formatAmount(t.CommodityPrice, t.GetCurrency()),
+		FeeAmount:               t.FormatFee(),
+		AccountFee:              t.bank.FeeAccountName,
 		AmountTotal: t.formatAmountRealWithCurrency(
 			t.AmountAccount+t.Fee+buffer.getAmountSum(),
 			t.GetCurrencyBySymbol(t.CurrencyAccount),
@@ -641,16 +654,4 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	}
 
 	return out.String()
-
-	// return fmt.Sprintf(
-	// 	"%s * %s%s\n%s    %s  %s\n%s    %s\n",
-	// 	t.FormatDate(),
-	// 	payee,
-	// 	t.GetNote(),
-	// 	strings.Join(metaLines, ""),
-	// 	t.GetAccountTo(),
-	// 	t.FormatAmountRealInverted(&buffer),
-	// 	t.FormatTwinTransaction(buffer),
-	// 	t.GetAccountFrom(),
-	// )
 }
