@@ -173,8 +173,14 @@ func (t Transaction) GetExchangeRate() float64 {
 }
 
 func formatAmount(amount float64, ci CurrencyInfo) string {
+	prefixMinusSign := ""
+
+	if amount < 0 {
+		prefixMinusSign = "-"
+	}
+
 	if ci.IsInFront {
-		return fmt.Sprintf("%s%.2f", ci.Sign, amount)
+		return fmt.Sprintf("%s%s%.2f", prefixMinusSign, ci.Sign, math.Abs(amount))
 	} else {
 		return fmt.Sprintf("%.2f %s", amount, ci.Sign)
 	}
