@@ -190,6 +190,10 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 // check if leading columns in order correspond to identifying columns
 func GetBankConfig(header []string, banks map[string]*Bank) (*Bank, bool) {
 	for name, bank := range banks {
+		if len(bank.IdentifyingColumns) == 0 {
+			continue
+		}
+
 		if len(bank.IdentifyingColumns) > len(header) {
 			continue
 		}
