@@ -103,6 +103,10 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 		receiverAccountNumber = record[ci.ReceiverAccountNumber]
 	}
 
+	if ci.ReceiverBankCode != -1 {
+		receiverAccountNumber = receiverAccountNumber + "/" + record[ci.ReceiverBankCode]
+	}
+
 	commodity := ""
 	if ci.Commodity != -1 {
 		commodity = record[ci.Commodity]

@@ -17,8 +17,11 @@ type ColumnIndices struct {
 	AmountAccount         int `yaml:"amountAccount"`
 	Fee                   int `yaml:"fee"`
 	ReceiverAccountNumber int `yaml:"receiverAccountNumber"`
-	NoteForMe             int `yaml:"noteForMe"`
-	NoteForReceiver       int `yaml:"noteForReceiver"`
+	// If this exists, it is concatenated to account number with / inbetween.
+	// This is how czech bank account numbers are formatted
+	ReceiverBankCode int `yaml:"receiverBankCode"`
+	NoteForMe        int `yaml:"noteForMe"`
+	NoteForReceiver  int `yaml:"noteForReceiver"`
 }
 
 type ColumnNames struct {
@@ -34,6 +37,7 @@ type ColumnNames struct {
 	AmountAccount         string `yaml:"amountAccount"`
 	Fee                   string `yaml:"fee"`
 	ReceiverAccountNumber string `yaml:"receiverAccountNumber"`
+	ReceiverBankCode      string `yaml:"receiverBankCode"`
 	NoteForMe             string `yaml:"noteForMe"`
 	NoteForReceiver       string `yaml:"noteForReceiver"`
 }
@@ -137,6 +141,7 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 		AmountAccount:         -1,
 		Fee:                   -1,
 		ReceiverAccountNumber: -1,
+		ReceiverBankCode:      -1,
 		NoteForMe:             -1,
 		NoteForReceiver:       -1,
 	}
@@ -177,6 +182,9 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 		}
 		if v == b.ColumnNames.ReceiverAccountNumber {
 			indices.ReceiverAccountNumber = i
+		}
+		if v == b.ColumnNames.ReceiverBankCode {
+			indices.ReceiverBankCode = i
 		}
 		if v == b.ColumnNames.NoteForMe {
 			indices.NoteForMe = i
