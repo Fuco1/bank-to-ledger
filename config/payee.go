@@ -17,8 +17,12 @@ type TransactionMeta struct {
 
 type PayeePattern struct {
 	Value string
-	Type  string
-	Meta  *map[string]string
+
+	// Store the type of pattern.  This property is filled during matching.
+	// TODO: it seems it is never used
+	Type string
+
+	Meta *map[string]string
 }
 
 type PayeePatterns []PayeePattern
@@ -46,7 +50,7 @@ type Payee struct {
 
 	NoteForMe PayeePatterns `yaml:"noteForMe"`
 
-	Meta *TransactionMeta `yaml:"meta"`
+	Meta *map[string]string `yaml:"meta"`
 }
 
 type PayeeConfig struct {

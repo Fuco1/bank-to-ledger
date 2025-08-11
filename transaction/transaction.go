@@ -38,8 +38,6 @@ type Transaction struct {
 	NoteForMe       string
 	NoteForReceiver string
 
-	Meta cfg.TransactionMeta
-
 	config cfg.Config
 	bank   *cfg.Bank
 
@@ -526,6 +524,12 @@ func (t Transaction) GetMeta(payee string) map[string]string {
 	meta, exists = t.config.ToMeta.PayeeRaw[t.PayeeRaw]
 	if exists {
 		t.getMetaFromStruct(meta, metaOut)
+	}
+
+	if t.payee != nil && t.payee.Meta != nil {
+		for k, v := range *t.payee.Meta {
+			metaOut[k] = t.FormatTextTemplate(v)
+		}
 	}
 
 	if t.pattern != nil && t.pattern.Meta != nil {

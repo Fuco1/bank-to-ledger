@@ -189,3 +189,48 @@ payees:
 		t.Errorf("Unmarshalled config does not match expected config. Got %+v, expected %+v", config.Payees, expected.Payees)
 	}
 }
+
+func TestUnmarshalPayee_payeeRaw_with_global_meta(t *testing.T) {
+	yamlData := `
+payees:
+  TIGER:
+    payeeRaw:
+      - '^tiger.*?':
+          location: Prague
+    meta:
+      payeeRaw: '{{ .Transaction.PayeeRaw }}'
+`
+
+	var config Config
+	err := yaml.Unmarshal([]byte(yamlData), &config)
+	if err != nil {
+		t.Fatalf("Error unmarshalling YAML: %v", err)
+	}
+
+	var expected Config = Config{
+		Payees: map[string]*Payee{
+			"TIGER": {
+				Name:    "",
+				Account: "",
+				PayeeRaw: []PayeePattern{
+					{
+						Value: "^tiger.*?",
+						Type:  "",
+						Meta: &map[string]string{
+							"location": "Prague",
+						},
+					},
+				},
+				ReceiverAccountNumber: nil,
+				PaymentType:           nil,
+				Meta: &map[string]string{
+					"payeeRaw": "{{ .Transaction.PayeeRaw }}",
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(config.Payees, expected.Payees) {
+		t.Errorf("Unmarshalled config does not match expected config. Got %+v, expected %+v", config.Payees, expected.Payees)
+	}
+}

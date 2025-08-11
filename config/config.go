@@ -13,6 +13,11 @@ type SymbolMap struct {
 	InFront bool   `yaml:"inFront"`
 }
 
+type ToMetaConfig struct {
+	Payee    map[string]TransactionMeta `yaml:"payee"`
+	PayeeRaw map[string]TransactionMeta `yaml:"payeeRaw"`
+}
+
 type Config struct {
 	Accounts Account `yaml:"accounts"`
 
@@ -32,10 +37,7 @@ type Config struct {
 		Payee map[string]string `yaml:"payee"`
 	} `yaml:"toAccountTo"`
 
-	ToMeta struct {
-		Payee    map[string]TransactionMeta `yaml:"payee"`
-		PayeeRaw map[string]TransactionMeta `yaml:"payeeRaw"`
-	} `yaml:"toMeta"`
+	ToMeta ToMetaConfig `yaml:"toMeta"`
 
 	PayeeIsTravel []string `yaml:"payeeIsTravel"`
 
