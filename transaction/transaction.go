@@ -73,7 +73,7 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 	if ci.Fee == -1 || record[ci.Fee] == "" {
 		Fee = 0
 	} else {
-		Fee, _ = strconv.ParseFloat(record[ci.Fee], 64)
+		Fee, _ = strconv.ParseFloat(normalizeAmount(record[ci.Fee]), 64)
 	}
 
 	currencyRaw := record[ci.CurrencyRaw]
@@ -172,10 +172,6 @@ func (t Transaction) GetCurrencyBySymbol(currency string) CurrencyInfo {
 	return info
 }
 
-func (t Transaction) GetExchangeRate() float64 {
-	return t.AmountAccount / t.AmountReal
-}
-
 func formatAmount(amount float64, ci CurrencyInfo) string {
 	prefixMinusSign := ""
 
@@ -191,9 +187,9 @@ func formatAmount(amount float64, ci CurrencyInfo) string {
 }
 
 // TODO: make the Kc here configurable
-func formatExchangeRate(exchangeRate float64, ci CurrencyInfo) string {
+func formatAmountAccount(accountAmount float64, ci CurrencyInfo) string {
 	if ci.Sign != "Kc" {
-		return fmt.Sprintf(" @ %.6f Kc", exchangeRate)
+		return fmt.Sprintf(" @@ %.2f Kc", accountAmount)
 	} else {
 		return ""
 	}
@@ -207,8 +203,8 @@ func (t Transaction) formatAmountReal(amount float64) string {
 func (t Transaction) formatAmountRealWithCurrency(amount float64, ci CurrencyInfo) string {
 	amountFormatted := formatAmount(amount, ci)
 
-	if t.CurrencyRaw != t.CurrencyAccount {
-		amountFormatted = amountFormatted + formatExchangeRate(t.GetExchangeRate(), ci)
+	if t.CurrencyRaw != "" && t.CurrencyRaw != t.CurrencyAccount {
+		amountFormatted = amountFormatted + formatAmountAccount(math.Abs(t.AmountAccount), ci)
 	}
 
 	return amountFormatted
