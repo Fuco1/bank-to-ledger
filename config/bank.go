@@ -42,6 +42,8 @@ type ColumnNames struct {
 	NoteForReceiver       string `yaml:"noteForReceiver"`
 }
 
+// Matchers are a key-value pattern for matching a transaction.  Each field must
+// much exactly the value in the transaction.
 type Matcher struct {
 	DateRaw               string `yaml:"dateRaw"`
 	Payee                 string `yaml:"payee"`
