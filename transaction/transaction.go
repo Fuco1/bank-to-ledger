@@ -216,10 +216,21 @@ func (t Transaction) FormatAmountReal() string {
 	return t.formatAmountReal(t.AmountReal)
 }
 
+func (t Transaction) getFee() float64 {
+	var fee float64 = -t.Fee
+	if t.bank.InvertFeeAmount {
+		fee = -fee
+	}
+
+	return fee
+}
+
 func (t Transaction) FormatFee() string {
-	if t.Fee != 0 {
+	var fee float64 = t.getFee()
+
+	if fee != 0 {
 		return t.formatAmountRealWithCurrency(
-			-t.Fee,
+			fee,
 			t.GetCurrencyBySymbol(t.CurrencyAccount),
 		)
 	} else {
@@ -640,7 +651,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		FeeAmount:               t.FormatFee(),
 		AccountFee:              t.bank.FeeAccountName,
 		AmountTotal: t.formatAmountRealWithCurrency(
-			t.AmountAccount+t.Fee+buffer.getAmountSum(),
+			t.AmountAccount-t.getFee()+buffer.getAmountSum(),
 			t.GetCurrencyBySymbol(t.CurrencyAccount),
 		),
 		TwinTransaction: t.FormatTwinTransaction(buffer),

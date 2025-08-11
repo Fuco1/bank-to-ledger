@@ -98,6 +98,8 @@ type Bank struct {
 	// Name of the account accruing this bank's fees
 	FeeAccountName string `yaml:"feeAccountName"`
 
+	InvertFeeAmount bool `yaml:"invertFeeAmount"`
+
 	Templates map[string]string `yaml:"templates"`
 
 	// Pattern used to parse date from DateRaw column
