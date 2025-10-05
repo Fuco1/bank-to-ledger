@@ -642,6 +642,11 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		log.Fatal(err)
 	}
 
+	amountAccount := t.AmountAccount
+	if !t.bank.FeeAmountIncludedInTotal {
+		amountAccount = amountAccount - t.getFee()
+	}
+
 	var out bytes.Buffer
 	context := TemplateContext{
 		Transaction:             t,
@@ -655,7 +660,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		FeeAmount:               t.FormatFee(),
 		AccountFee:              t.bank.FeeAccountName,
 		AmountTotal: t.formatAmountRealWithCurrency(
-			t.AmountAccount-t.getFee()+buffer.getAmountSum(),
+			amountAccount+buffer.getAmountSum(),
 			t.GetCurrencyBySymbol(t.CurrencyAccount),
 		),
 		TwinTransaction: t.FormatTwinTransaction(buffer),

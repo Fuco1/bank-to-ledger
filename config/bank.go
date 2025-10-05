@@ -106,6 +106,8 @@ type Bank struct {
 
 	InvertFeeAmount bool `yaml:"invertFeeAmount"`
 
+	FeeAmountIncludedInTotal bool `yaml:"feeAmountIncludedInTotal"`
+
 	Templates map[string]string `yaml:"templates"`
 
 	// Pattern used to parse date from DateRaw column
