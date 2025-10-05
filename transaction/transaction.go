@@ -624,9 +624,13 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		metaLines = append(metaLines, fmt.Sprintf("    ; %s: %s\n", k, v))
 	}
 
-	tmpl, err := template.New("transaction").Parse(`{{ .Date }} * {{ .Payee }}{{ .Note }}
+	funcMap := template.FuncMap{
+		"replace": strings.ReplaceAll,
+	}
+
+	tmpl, err := template.New("transaction").Funcs(funcMap).Parse(`{{ .Date }} * {{ .Payee }}{{ .Note }}
 {{ .Meta }}    {{ .AccountTo }}
-{{- if .Transaction.CommodityQuantity }}  {{ .Transaction.CommodityQuantity }} {{ .Transaction.Commodity }} @ {{ .CommodityPriceFormatted }}
+{{- if .Transaction.CommodityQuantity }}  {{ .Transaction.CommodityQuantity }} {{ replace .Transaction.Commodity " " "_" }} @ {{ .CommodityPriceFormatted }}
 {{- else }}      {{ .AccountToAmount }}
 {{- end }}
 {{- if .FeeAmount }}
