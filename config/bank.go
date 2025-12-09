@@ -110,6 +110,10 @@ type Bank struct {
 
 	Templates map[string]string `yaml:"templates"`
 
+	// If true reverse transactions before processing.  This indicates that the
+	// export csv is ordered from newest to oldest.
+	ReverseTransactions bool `yaml:"reverseTransactions"`
+
 	// Pattern used to parse date from DateRaw column
 	DatePatternFrom string `yaml:"datePatternFrom"`
 

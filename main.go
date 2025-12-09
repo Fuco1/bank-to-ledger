@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	s "strings"
 	//	"github.com/sanity-io/litter"
 )
@@ -152,6 +153,10 @@ func main() {
 
 	transactions, bank := readCsv(args[0], options, config)
 	bank.ValidateBankConfig()
+
+	if bank.ReverseTransactions {
+		slices.Reverse(transactions)
+	}
 
 	buffer := t.TransactionBuffer{}
 	unknownPayees := make([]string, 1)
