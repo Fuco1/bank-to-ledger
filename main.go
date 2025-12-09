@@ -211,15 +211,18 @@ func main() {
 					} else {
 						buffer = t.TransactionBuffer{}
 					}
+
+					if i < len(transactions)-1 || shouldPrint {
+						fmt.Println()
+					}
 				}
 
 				if shouldPrint {
 					fmt.Println(trans.FormatTrans(buffer))
-				}
-
-				// print newline for all except last transaction
-				if i < len(transactions)-1 || !buffer.IsEmpty() {
-					fmt.Println()
+					// print newline for all except last transaction
+					if i < len(transactions)-1 {
+						fmt.Println()
+					}
 				}
 			}
 		}
