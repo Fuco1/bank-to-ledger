@@ -138,9 +138,10 @@ func LoadConfig(fileName string) Config {
 			p, exists := cfg.Payees[bank.PayeeName]
 			if exists {
 				bank.Payee = p
-			}
-			if p.Account == "" {
-				p.Account = bank.AccountName
+
+				if p.Account == "" {
+					p.Account = bank.AccountName
+				}
 			}
 		}
 	}
