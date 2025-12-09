@@ -6,6 +6,7 @@ import (
 
 type ColumnIndices struct {
 	DateRaw               int `yaml:"dateRaw"`
+	EDateRaw              int `yaml:"eDateRaw"`
 	PayeeRaw              int `yaml:"payeeRaw"`
 	CurrencyRaw           int `yaml:"currencyRaw"`
 	CurrencyAccount       int `yaml:"currencyAccount"`
@@ -26,6 +27,7 @@ type ColumnIndices struct {
 
 type ColumnNames struct {
 	DateRaw               string `yaml:"dateRaw"`
+	EDateRaw              string `yaml:"eDateRaw"`
 	PayeeRaw              string `yaml:"payeeRaw"`
 	CurrencyRaw           string `yaml:"currencyRaw"`
 	CurrencyAccount       string `yaml:"currencyAccount"`
@@ -67,6 +69,7 @@ type TwinTransaction struct {
 	//   transaction (produces transaction with multiple lines)
 	Type string `yaml:"type"`
 
+	// For merge twin transactions, print the inverted amount for this account.
 	Inverted bool `yaml:"inverted"`
 
 	Anchor []Matcher `yaml:"anchor"`
@@ -157,6 +160,9 @@ func (b Bank) NamesToIndices(header []string) ColumnIndices {
 	for i, v := range header {
 		if v == b.ColumnNames.DateRaw {
 			indices.DateRaw = i
+		}
+		if v == b.ColumnNames.EDateRaw {
+			indices.EDateRaw = i
 		}
 		if v == b.ColumnNames.PayeeRaw {
 			indices.PayeeRaw = i

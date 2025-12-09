@@ -19,7 +19,17 @@ import (
 )
 
 type Transaction struct {
-	DateRaw         string
+	// Date when the transaction occurred.
+	DateRaw string
+
+	// Date when the transaction was cleared by the bank.  Monthly bank
+	// statements usually include transactions by cleared date, so that a
+	// transaction made at the end of the month can be accounted for in the
+	// following month.  This can be used for better reporting and easier
+	// reconciling.  Not every bank provides this information and ledger will
+	// use "DateRaw" if no effective date is provided.
+	EDateRaw string
+
 	PayeeRaw        string
 	CurrencyRaw     string
 	CurrencyAccount string
@@ -120,8 +130,14 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 		commodityQuantity, _ = strconv.ParseFloat(normalizeAmount(record[ci.CommodityQuantity]), 64)
 	}
 
+	eDateRaw := ""
+	if ci.EDateRaw != -1 {
+		eDateRaw = record[ci.EDateRaw]
+	}
+
 	return Transaction{
 		DateRaw:         record[ci.DateRaw],
+		EDateRaw:        eDateRaw,
 		PaymentType:     record[ci.PaymentType],
 		CurrencyRaw:     currencyRaw,
 		CurrencyAccount: currencyAccount,
@@ -148,6 +164,15 @@ func FromCsvRecord(record []string, config cfg.Config, bank *cfg.Bank) Transacti
 func (t Transaction) FormatDate() string {
 	tt, _ := time.Parse(t.bank.DatePatternFrom, t.DateRaw)
 	return tt.Format("2006/01/02")
+}
+
+func (t Transaction) FormatEDate() string {
+	if t.EDateRaw != "" {
+		ett, _ := time.Parse(t.bank.DatePatternFrom, t.EDateRaw)
+		return ett.Format("2006/01/02")
+	}
+
+	return ""
 }
 
 func (t Transaction) GetCurrency() CurrencyInfo {
@@ -606,6 +631,7 @@ func (t Transaction) formatAccountTo() string {
 type TemplateContext struct {
 	Transaction             Transaction
 	Date                    string
+	EDate                   string
 	Payee                   string
 	Note                    string
 	Meta                    string
@@ -637,7 +663,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	// "account to" and "account from" so that the posting remains positive.
 	swapAccountToAndFrom := t.AmountReal > 0 && (buffer.IsEmpty() || buffer.GetTwinType() == "sum")
 
-	tmpl, err := template.New("transaction").Funcs(funcMap).Parse(`{{ .Date }} * {{ .Payee }}{{ .Note }}
+	tmpl, err := template.New("transaction").Funcs(funcMap).Parse(`{{ .Date }}{{ if and .EDate (ne .Date .EDate) }}={{ .EDate }}{{ end }} * {{ .Payee }}{{ .Note }}
 {{ .Meta }}    {{ if .SwapAccountToAndFrom }}{{ .AccountFrom }}{{ else }}{{ .AccountTo }}{{ end }}
 {{- if .Transaction.CommodityQuantity }}  {{ .Transaction.CommodityQuantity }} {{ replace .Transaction.Commodity " " "_" }} @ {{ .CommodityPriceFormatted }}
 {{- else }}      {{ .AccountToAmount }}
@@ -668,6 +694,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 	context := TemplateContext{
 		Transaction:             t,
 		Date:                    t.FormatDate(),
+		EDate:                   t.FormatEDate(),
 		Payee:                   t.formatPayee(),
 		Note:                    t.GetNote(),
 		Meta:                    strings.Join(metaLines, ""),

@@ -70,6 +70,7 @@ func (ci *ColumnIndices) UnmarshalYAML(value *yaml.Node) error {
 
 	ind := columnIndices{
 		DateRaw:               -1,
+		EDateRaw:              -1,
 		PayeeRaw:              -1,
 		CurrencyRaw:           -1,
 		CurrencyAccount:       -1,
