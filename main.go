@@ -156,7 +156,7 @@ func main() {
 	buffer := t.TransactionBuffer{}
 	unknownPayees := make([]string, 1)
 
-	for _, trans := range transactions {
+	for i, trans := range transactions {
 		if trans.IsIgnored() {
 			continue
 		}
@@ -193,6 +193,10 @@ func main() {
 					}
 
 					fmt.Println(buffer.Format())
+
+					// we detected a twin type but the current transaction
+					// didn't match it, which means it's the start of a new
+					// chain
 					if twinType != nil {
 						buffer = t.TransactionBuffer{
 							Transactions: []t.Transaction{trans},
@@ -207,6 +211,11 @@ func main() {
 				if shouldPrint {
 					fmt.Println(trans.FormatTrans(buffer))
 				}
+
+				// print newline for all except last transaction
+				if i < len(transactions)-1 || !buffer.IsEmpty() {
+					fmt.Println()
+				}
 			}
 		}
 	}
@@ -215,5 +224,7 @@ func main() {
 		fmt.Println(buffer.Format())
 	}
 
-	fmt.Fprintf(os.Stderr, "\n\n%s", s.Join(unknownPayees, "\n"))
+	if len(unknownPayees) > 0 {
+		fmt.Fprintf(os.Stderr, "\n\n%s", s.Join(unknownPayees, "\n"))
+	}
 }
