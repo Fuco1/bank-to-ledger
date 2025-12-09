@@ -236,14 +236,18 @@ func (t Transaction) FormatFee() string {
 	}
 }
 
-func (t Transaction) FormatAmountRealInverted(buffer *TransactionBuffer) string {
+func (t Transaction) GetTotalAmountRealInverted(buffer *TransactionBuffer) float64 {
 	amount := -t.AmountReal
 
-	if buffer != nil && buffer.Twin != nil && buffer.Twin.Type == "sum" {
+	if buffer != nil && buffer.GetTwinType() == "sum" {
 		amount = amount - buffer.getAmountSum()
 	}
 
-	return t.formatAmountReal(amount)
+	return amount
+}
+
+func (t Transaction) FormatAmountRealInverted(buffer *TransactionBuffer) string {
+	return t.formatAmountReal(t.GetTotalAmountRealInverted(buffer))
 }
 
 func (t Transaction) matchPayee(p *cfg.Payee) *cfg.PayeePattern {
@@ -613,6 +617,7 @@ type TemplateContext struct {
 	AmountTotal             string
 	TwinTransaction         string
 	AccountFrom             string
+	SwapAccountToAndFrom    bool
 }
 
 func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
@@ -628,8 +633,12 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		"replace": strings.ReplaceAll,
 	}
 
+	// positive number means income, such as dividends or interest, we flip the
+	// "account to" and "account from" so that the posting remains positive.
+	swapAccountToAndFrom := t.AmountReal > 0 && (buffer.IsEmpty() || buffer.GetTwinType() == "sum")
+
 	tmpl, err := template.New("transaction").Funcs(funcMap).Parse(`{{ .Date }} * {{ .Payee }}{{ .Note }}
-{{ .Meta }}    {{ .AccountTo }}
+{{ .Meta }}    {{ if .SwapAccountToAndFrom }}{{ .AccountFrom }}{{ else }}{{ .AccountTo }}{{ end }}
 {{- if .Transaction.CommodityQuantity }}  {{ .Transaction.CommodityQuantity }} {{ replace .Transaction.Commodity " " "_" }} @ {{ .CommodityPriceFormatted }}
 {{- else }}      {{ .AccountToAmount }}
 {{- end }}
@@ -639,8 +648,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 {{- if .TwinTransaction -}}
 {{ .TwinTransaction }}
 {{- end }}
-    {{ .AccountFrom }}{{ if or .TwinTransaction .FeeAmount (and (ne .Transaction.CurrencyRaw "") (ne .Transaction.CurrencyRaw .Transaction.CurrencyAccount)) }}  {{ .AmountTotal }}{{ end }}
-`)
+    {{ if .SwapAccountToAndFrom }}{{ .AccountTo }}{{ else }}{{ .AccountFrom }}{{ end }}{{ if or .TwinTransaction .FeeAmount (and (ne .Transaction.CurrencyRaw "") (ne .Transaction.CurrencyRaw .Transaction.CurrencyAccount)) }}  {{ .AmountTotal }}{{ end }}`)
 
 	if err != nil {
 		log.Fatal(err)
@@ -651,6 +659,11 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		amountAccount = amountAccount - t.getFee()
 	}
 
+	accountToAmount := t.GetTotalAmountRealInverted(&buffer)
+	if swapAccountToAndFrom {
+		accountToAmount = -accountToAmount
+	}
+
 	var out bytes.Buffer
 	context := TemplateContext{
 		Transaction:             t,
@@ -659,7 +672,7 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 		Note:                    t.GetNote(),
 		Meta:                    strings.Join(metaLines, ""),
 		AccountTo:               t.formatAccountTo(),
-		AccountToAmount:         t.FormatAmountRealInverted(&buffer),
+		AccountToAmount:         t.formatAmountReal(accountToAmount),
 		CommodityPriceFormatted: formatAmount(t.CommodityPrice, t.GetCurrency()),
 		FeeAmount:               t.FormatFee(),
 		AccountFee:              t.bank.FeeAccountName,
@@ -667,8 +680,9 @@ func (t Transaction) FormatTrans(buffer TransactionBuffer) string {
 			amountAccount+buffer.getAmountSum(),
 			t.GetCurrencyBySymbol(t.CurrencyAccount),
 		),
-		TwinTransaction: t.FormatTwinTransaction(buffer),
-		AccountFrom:     t.GetAccountFrom(),
+		TwinTransaction:      t.FormatTwinTransaction(buffer),
+		AccountFrom:          t.GetAccountFrom(),
+		SwapAccountToAndFrom: swapAccountToAndFrom,
 	}
 
 	err = tmpl.Execute(&out, context)

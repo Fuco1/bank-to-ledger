@@ -57,6 +57,14 @@ func (tb TransactionBuffer) Length() int {
 	return len(tb.Transactions)
 }
 
+func (tb TransactionBuffer) GetTwinType() string {
+	if tb.Twin != nil {
+		return tb.Twin.Type
+	}
+
+	return ""
+}
+
 func (buffer TransactionBuffer) getAmountSum() float64 {
 	var amountBuffer = 0.0
 	for _, tr := range buffer.Transactions {
