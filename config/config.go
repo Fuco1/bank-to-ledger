@@ -81,6 +81,7 @@ func (ci *ColumnIndices) UnmarshalYAML(value *yaml.Node) error {
 		AmountAccount:         -1,
 		Fee:                   -1,
 		ReceiverAccountNumber: -1,
+		ReceiverBankCode:      -1,
 		NoteForMe:             -1,
 		NoteForReceiver:       -1,
 	}
